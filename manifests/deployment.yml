@@ -1,0 +1,16 @@
+apiVersion : apps/v1beta1
+kind: Deployment
+metadata:
+  name: dsmsjavasample 
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dsmsjavasample 
+    spec:
+      containers:
+        - name: dsmsjavasample 
+          image: desattiracr.azurecr.io/dsmsjavasample 
+          ports:
+          - containerPort: 80
