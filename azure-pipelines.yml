@@ -48,14 +48,13 @@ stages:
       runOnce:
         deploy:
           steps:
-         
           - task: AzureCLI@1
             displayName: 'List all review app URLs'
             inputs:
               azureSubscription: $(azureServiceConnection)
               scriptLocation: inlineScript
               inlineScript: |
-                az aks use-dev-spaces -n $(AZDSControllerName) -g $(AZDSControllerRG) -y -s $(k8sNamespace)/$(k8sNamespaceForPR) --update
+                az aks use-dev-spaces -n $(AZDSControllerName) -g $(AZDSControllerRG) -y -s $(k8sNamespace)/$(k8sNamespaceForPR)
                 azds prep
                 dir
                 azds up
