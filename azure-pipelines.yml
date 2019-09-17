@@ -82,5 +82,5 @@ stages:
               inlineScript: |
                 az aks use-dev-spaces -n $(AZDSControllerName) -g $(AZDSControllerRG) -y -s $(k8sNamespace)/$(k8sNamespaceForPR) --update
                 azds prep
-                azds up -d
+                azds up
                 azds list-uris
