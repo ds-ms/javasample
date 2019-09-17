@@ -41,39 +41,14 @@ stages:
   - deployment: Deploy
     displayName: Deploy job
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'windows-latest'
       
     environment: 'desattiraks-bg.default'
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: Kubernetes@1
-            displayName: 'Create namespace'
-            inputs:
-              command: create
-              arguments: 'ns $(k8sNamespaceForPR)'
-
-          - task: Kubernetes@1
-            displayName: 'Add devspace label'
-            inputs:
-              command: label
-              arguments: '--overwrite ns $(k8sNamespaceForPR) azds.io/space=true'
-
-          - task: Kubernetes@1
-            displayName: 'Setup root devspace to dev'
-            inputs:
-              command: label
-              arguments: '--overwrite ns $(k8sNamespaceForPR) azds.io/parent-space=$(k8sNamespace)'
-
-          - task: KubernetesManifest@0
-            displayName: Create imagePullSecret
-            inputs:
-              action: createSecret
-              secretName: $(imagePullSecret)
-              namespace: $(k8sNamespaceforpr)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-          
+         
           - task: AzureCLI@1
             displayName: 'List all review app URLs'
             inputs:
@@ -82,5 +57,6 @@ stages:
               inlineScript: |
                 az aks use-dev-spaces -n $(AZDSControllerName) -g $(AZDSControllerRG) -y -s $(k8sNamespace)/$(k8sNamespaceForPR) --update
                 azds prep
+                dir
                 azds up
                 azds list-uris
