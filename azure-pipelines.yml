@@ -1,0 +1,86 @@
+
+trigger:
+- master
+
+variables:
+
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: 'desattiracr'
+  imageRepository: 'gosample'
+  containerRegistry: 'desattiracr.azurecr.io'
+  dockerfilePath: '**/Dockerfile'
+  tag: '$(Build.BuildId)'
+  imagePullSecret: 'desattiracr-auth'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+  
+  azureServiceConnection: 'rmdev'
+  k8sNamespaceForPR: '$(System.pullRequest.sourceBranch)'
+  k8sNamespace: 'default'
+  AZDSControllerName: 'desattir-bg'
+  AZDSControllerRG: 'desattir-bg'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "hello world" 
+
+
+- stage: DeployPR
+  displayName: Deploy PR review app
+  dependsOn: Build
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/pull/'))
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy job
+    pool:
+      vmImage: 'ubuntu-latest'
+      
+    environment: 'desattiraks-bg.default'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            displayName: 'Create namespace'
+            inputs:
+              command: create
+              arguments: 'ns $(k8sNamespaceForPR)'
+
+          - task: Kubernetes@1
+            displayName: 'Add devspace label'
+            inputs:
+              command: label
+              arguments: '--overwrite ns $(k8sNamespaceForPR) azds.io/space=true'
+
+          - task: Kubernetes@1
+            displayName: 'Setup root devspace to dev'
+            inputs:
+              command: label
+              arguments: '--overwrite ns $(k8sNamespaceForPR) azds.io/parent-space=$(k8sNamespace)'
+
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              namespace: $(k8sNamespaceforpr)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+          
+          - task: AzureCLI@1
+            displayName: 'List all review app URLs'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks use-dev-spaces -n $(AZDSControllerName) -g $(AZDSControllerRG) -y -s $(k8sNamespace)/$(k8sNamespaceForPR) --update
+                azds prep
+                azds up -d
+                azds list-uris
