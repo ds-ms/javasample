@@ -54,7 +54,7 @@ stages:
     displayName: Deploy
     pool:
       vmImage: $(vmImageName)
-    environment: '{{ k8sResource.EnvironmentReference.Name }}.{{ k8sResource.Name }}'
+    environment: 'dsmsjavasample.default'
     strategy:
       runOnce:
         deploy:
@@ -89,7 +89,7 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
       
-    environment: '{{ k8sResource.EnvironmentReference.Name }}.{{ k8sResource.Name }}'
+    environment: 'dsmsjavasample.default'
     strategy:
       runOnce:
         deploy:
